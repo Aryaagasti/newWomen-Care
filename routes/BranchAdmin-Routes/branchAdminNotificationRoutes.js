@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const branchAdminAuthMiddleware = require("../../middlewares/branchMiddleware");
+const branchAdminAuthMiddleware = require("../../middlewares/branchAdminMiddleware");
 const {
     getBranchAdminNotificationCount,
     getBranchAdminReadNotifications,

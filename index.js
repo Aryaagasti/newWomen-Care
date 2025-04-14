@@ -17,7 +17,7 @@ const settingsRoutes = require("./routes/SuperAdmin-Routes/SettingRoutes");
 const customerRoutes = require("./routes/SuperAdmin-Routes/customerRoutes");
 const superAdminOrderRoutes = require("./routes/SuperAdmin-Routes/superAdminOrderRoutes");
 const notificationsRoutes = require("./routes/SuperAdmin-Routes/notficationsRoutes");
-const PaymentRoute =  require("./routes/SuperAdmin-Routes/paymentHistoryRoutes")
+
 
 
 
@@ -28,11 +28,12 @@ const branchAdminRoutes = require("./routes/BranchAdmin-Routes/branchAdminRoutes
 const branchDetailsRoutes = require("./routes/BranchAdmin-Routes/branchAdminDetailsRoutes");
 const branchAdminProductRoutes = require("./routes/BranchAdmin-Routes/branchAdminProductRoutes");
 const branchAdminDeliveryBoyRoutes = require("./routes/BranchAdmin-Routes/branch-adminDeliveryBoyRoutes");
-const branchAdminPaymentRoute = require("./routes/BranchAdmin-Routes/branchAdminPaymentRoutes");
 const branchSettingsRoutes = require("./routes/BranchAdmin-Routes/branchSettingsRoutes");
 const branchOrderRoutes = require("./routes/BranchAdmin-Routes/branch-adminOrderRoutes");
 const branchAdminCustomerRoutes = require("./routes/BranchAdmin-Routes/branchAdminCustomerRoutes");
 const branchNotificationsRoutes = require("./routes/BranchAdmin-Routes/branchAdminNotificationRoutes");
+const branchAdminDashboardRoutes = require("./routes/BranchAdmin-Routes/branchAdminDashboardRoutes");
+
 
 
 
@@ -49,9 +50,11 @@ const userSettingsRoutes = require("./routes/user-Routes/userSettingsRoutes");
 const userNotificationsRoutes = require("./routes/user-Routes/userNotficationsRoutes");
 
 
-//✅ Importing All Delivery boy Related Routes
-const deliveryBoyAuthRotes = require("./routes/DeliveryBoy-Routes/deliveryBoyRoutes");
-
+//✅ Importing All Delivery Boy Routes
+const deliveryBoyModelRoutes = require("./routes/DeliveryBoyRoutes/deliveryBoyRoutes");
+const deliveryBoyNotificationRoutes = require("./routes/DeliveryBoyRoutes/deliveryBoyNotificationRoutes");
+const deliveryBoyOrderRoutes = require("./routes/DeliveryBoyRoutes/deliveryBoyorderRoutes");
+const deliverySettingsRoutes = require("./routes/DeliveryBoyRoutes/deliverySettingsRoutes");
 
 const app = express();
 
@@ -74,7 +77,6 @@ app.use("/api/customer", customerRoutes);
 app.use("/api/order", superAdminOrderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRoutes);
-app.use("/api/superAdminPayment",PaymentRoute);
 app.use("/api/notification", notificationsRoutes);
 
 //✅ Branch Admin Routes
@@ -84,9 +86,9 @@ app.use("/api/branchAdminProduct", branchAdminProductRoutes);
 app.use("/api/branchAdminDeliveryBoy", branchAdminDeliveryBoyRoutes);
 app.use("/api/branchSettings", branchSettingsRoutes);
 app.use("/api/branchOrder", branchOrderRoutes);
-app.use("/api/branchAdminPayment", branchAdminPaymentRoute);
 app.use("/api/branchCustomer", branchAdminCustomerRoutes);
 app.use("/api/branchAdmin/notification", branchNotificationsRoutes);
+app.use("/api/branchAdmin/dashboard", branchAdminDashboardRoutes);
 
 //✅ User Routes
 app.use("/api/user", userRoutes);
@@ -99,8 +101,10 @@ app.use("/api/user/settings", userSettingsRoutes);
 app.use("/api/user/notification", userNotificationsRoutes);
 
 //✅ Delivery Boy Routes
-app.use("/api/deliveryBoy", deliveryBoyAuthRotes);
-
+app.use("/api/deliveryBoy", deliveryBoyModelRoutes);
+app.use("/api/deliveryBoy/notification", deliveryBoyNotificationRoutes);
+app.use("/api/order", deliveryBoyOrderRoutes);
+app.use("/api/deliverySettings", deliverySettingsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

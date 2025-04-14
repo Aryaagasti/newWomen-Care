@@ -3,14 +3,12 @@ const {LoginDeliveryBoy, getDeliveryBoyProfile, updateProfile} =  require("../..
 const deliveryBoyAuthMiddleware =  require("../../middlewares/deliveryBoyAuthMiddleware")
 const { upload } = require("../../config/cloudinary");
 const router = express.Router();
-
-//login route
+ 
+//✅ Delivery Boy Model Routes
 router.post("/login", LoginDeliveryBoy);
-//get profile route
 router.get("/getProfile", deliveryBoyAuthMiddleware, getDeliveryBoyProfile);
-//update profile route
 router.put("/updateProfile", deliveryBoyAuthMiddleware, upload.fields([
     { name: "profileImage", maxCount: 1 },
 ]), updateProfile);
-
+ 
 module.exports = router;

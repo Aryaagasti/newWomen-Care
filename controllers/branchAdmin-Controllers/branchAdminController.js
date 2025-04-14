@@ -138,11 +138,13 @@ const getBranchAdminProfile = async (req, res) => {
   try {
     const { id } = req.params;
     const branchAdmin = await BranchAdmin.findById(id)
-      .populate("branch", "branchName fullAddress")
+      .populate("branch", "branchName")
       .select("fullName email contactNumber profileImage branch");
+    
     if (!branchAdmin) {
       return res.status(404).json({ message: "Branch Admin not found." });
     }
+
     res.status(200).json({
       success: true,
       message: "Branch Admin profile fetched successfully.",
@@ -156,7 +158,8 @@ const getBranchAdminProfile = async (req, res) => {
     });
   }
 };
-
+   
+   
 //✅ Update Branch Admin
 const updateBranchAdminProfile = async (req, res) => {
   try {
@@ -229,30 +232,38 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// ✅ Change Password At Profile (Without Current Password)
+//✅ Change Password At Profile
 const changeAdminPassAtProfile = async (req, res) => {
   try {
     const { id } = req.params; // Admin ID from the route parameter
-    const { newPassword, confirmPassword } = req.body;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
 
     // Validate required fields
-    if (!newPassword || !confirmPassword) {
-      return res.status(400).json({ message: "Both new password and confirm password are required." });
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "All password fields are required." });
     }
 
-    // Validate if new passwords match
     if (newPassword !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match." });
     }
 
-    // Find the admin in the database by ID
     const admin = await BranchAdmin.findById(id);
     if (!admin) {
       return res.status(404).json({ message: "Admin not found." });
     }
 
-    // Update password directly (hashed through pre-save middleware)
-    admin.password = newPassword;
+    // Check if the current password is correct
+    const isMatch = await admin.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ message: "Current password is incorrect." });
+    }
+
+    // Update password
+    admin.password = newPassword; // The `pre-save` middleware will hash the password
     await admin.save();
 
     res.status(200).json({

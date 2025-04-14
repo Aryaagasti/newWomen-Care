@@ -2,7 +2,7 @@ const express = require('express');
 const {register,login,forgotPassword,verifyOtp,resetPassword,logout, getBranchAdminProfile, updateBranchAdminProfile, changeAdminPassAtProfile} =  require('../../controllers/branchAdmin-Controllers/branchAdminController')
 const router = express.Router();
 const { upload } = require('../../config/cloudinary');
-const branchAdminAuthMiddleware = require('../../middlewares/branchMiddleware');
+const branchAdminAuthMiddleware = require('../../middlewares/branchAdminMiddleware');
  
 //✅ Branch Admin Routes
 router.post('/register', upload.fields([

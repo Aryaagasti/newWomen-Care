@@ -248,30 +248,38 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// ✅ Change Password At Profile (Without Current Password)
+//✅ Change Password At Profile
 const changeAdminPasswordAtProfile = async (req, res) => {
   try {
     const { id } = req.params; // Admin ID from the route parameter
-    const { newPassword, confirmNewPassword } = req.body;
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
     // Validate required fields
-    if (!newPassword || !confirmNewPassword) {
-      return res.status(400).json({ message: "Both new password and confirm password are required." });
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      return res
+        .status(400)
+        .json({ message: "All password fields are required." });
     }
 
-    // Ensure new password and confirm password match
     if (newPassword !== confirmNewPassword) {
       return res.status(400).json({ message: "Passwords do not match." });
     }
 
-    // Find the admin by ID
     const admin = await SuperAdmin.findById(id);
     if (!admin) {
       return res.status(404).json({ message: "Admin not found." });
     }
 
-    // Update password (hashed automatically via pre-save middleware)
-    admin.password = newPassword;
+    // Check if the current password is correct
+    const isMatch = await admin.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ message: "Current password is incorrect." });
+    }
+
+    // Update password
+    admin.password = newPassword; // The `pre-save` middleware will hash the password
     await admin.save();
 
     res.status(200).json({

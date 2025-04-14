@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
-const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs"); // You forgot to import this!
 
 const deliveryBoySchema = new Schema(
     {
@@ -18,7 +19,7 @@ const deliveryBoySchema = new Schema(
             match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
         },
         phoneNumber: {
-            type: String, // Changed to String to handle scenarios like country codes
+            type: Number,
             required: [true, "Phone number is required"],
             unique: true,
             validate: {
@@ -51,27 +52,27 @@ const deliveryBoySchema = new Schema(
             trim: true,
         },
         image: {
-            type: String, // URL for the profile image
+            type: String,
             trim: true,
         },
         branchInfo: {
-            type: Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
             ref: "Branches",
             required: false,
         },
         isActive: {
             type: Boolean,
-            default: true, // Default active status
+            default: true,
         },
     },
     { timestamps: true }
 );
 
+// ✅ Define middleware & methods BEFORE model compilation
+
 // Pre-save hook for hashing passwords
 deliveryBoySchema.pre("save", async function (next) {
-    if (!this.isModified("password")) {
-        return next();
-    }
+    if (!this.isModified("password")) return next();
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
@@ -87,5 +88,6 @@ deliveryBoySchema.virtual("fullDetails").get(function () {
     return `${this.fullName} (${this.userId}) - ${this.email}`;
 });
 
+// ✅ Compile the model AFTER defining all schema methods
 const DeliveryBoyModel = model("DeliveryBoy", deliveryBoySchema);
 module.exports = DeliveryBoyModel;

@@ -1,7 +1,7 @@
 const DeliveryBoy = require("../../models/SuperAdminModels/DeliveryBoy")
 const jwt = require("jsonwebtoken");
-
-// Login Delivery Boy
+ 
+//✅ Login Delivery Boy
 const LoginDeliveryBoy = async (req, res) => {
     try {
       const { userId, password } = req.body;
@@ -45,22 +45,22 @@ const LoginDeliveryBoy = async (req, res) => {
   };
   
   module.exports = { LoginDeliveryBoy };
-
-// Get Delivery Boy Profile
+ 
+//✅ Get Delivery Boy Profile
 const getDeliveryBoyProfile = async (req, res) => {
     try {
         const deliveryBoy = await DeliveryBoy.findById(req.deliveryBoy.id).populate("branchInfo");
         if (!deliveryBoy) {
             return res.status(404).json({ message: "Profile not found." });
         }
-
+ 
         res.json(deliveryBoy);
     } catch (error) {
         res.status(500).json({ message: "Server error.", error: error.message });
     }
 };
-
-// Update Delivery Boy Profile
+ 
+//✅ Update Delivery Boy Profile
 const updateProfile = async (req, res) => {
     try {
         const updatedProfile = await DeliveryBoy.findByIdAndUpdate(
@@ -68,11 +68,12 @@ const updateProfile = async (req, res) => {
             { ...req.body },
             { new: true }
         );
-
+ 
         res.json(updatedProfile);
     } catch (error) {
         res.status(500).json({ message: "Server error.", error: error.message });
     }
 };
-
+ 
 module.exports = { LoginDeliveryBoy, getDeliveryBoyProfile, updateProfile };
+ 
