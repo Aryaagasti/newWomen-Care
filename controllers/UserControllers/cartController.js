@@ -481,6 +481,35 @@ const moveToCart = async (req, res) => {
     });
   }
 };
+const getCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const cart = await Cart.findOne({ userId }).populate("items.productId");
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Cart is empty",
+        cart: {
+          items: [],
+          totalAmount: 0,
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart fetched successfully",
+      cart,
+    });
+  } catch (error) {
+    console.error("Get cart error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
+  }
+};
 
 module.exports = {
   addToCart,
@@ -490,4 +519,5 @@ module.exports = {
   BuyOrderFromCart,
   saveForLater,
   moveToCart,
+  getCart
 };
