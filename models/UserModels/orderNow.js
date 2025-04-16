@@ -67,6 +67,7 @@ const orderSchema = new mongoose.Schema(
       deliveryCharges: { type: Number },
       orderTotal: { type: Number },
     },
+    outForDeliveryAt: { type: Date, default: null },
     status: {
       type: String,
       enum: statusEnum,

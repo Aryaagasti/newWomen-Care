@@ -238,10 +238,72 @@ const getOrderStatus = async (req, res) => {
       });
   }
 };
+
+const assignDelivery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { deliveryBoyId } = req.body;
+ 
+    if (!id || !deliveryBoyId) {
+      return res.status(400).json({
+        success: false,
+        message: !id ? "ID is required." : "Delivery Boy ID is required.",
+      });
+    }
+ 
+    const [order, deliveryBoyExists] = await Promise.all([
+      Order.findById(id),
+      DeliveryBoyModel.exists({ _id: deliveryBoyId }),
+    ]);
+ 
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+ 
+    if (!deliveryBoyExists) {
+      return res.status(404).json({ success: false, message: "Delivery boy not found." });
+    }
+ 
+    const notAssignableStatus = ["Accepted", "Cancelled", "Delivered"];
+    if (notAssignableStatus.includes(order.deliveryStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order already ${order.deliveryStatus.toLowerCase()}.`,
+      });
+    }
+ 
+    // Set the current time for when the order is assigned to the delivery boy (Out For Delivery)
+    const updateData = {
+      $set: {
+        deliveryBoy: deliveryBoyId,
+        outForDeliveryAt: new Date(),  // Set the current time when assigned for delivery
+      },
+    };
+ 
+    // If the order is already marked as delivered, update deliveredAt timestamp
+    if (order.deliveryStatus === "Delivered") {
+      updateData.$set.deliveredAt = new Date(); // Update deliveredAt if the order is already delivered
+    }
+ 
+    await Order.updateOne({ _id: id }, updateData);
+ 
+    return res.status(200).json({
+      success: true,
+      message: "Delivery assigned successfully.",
+    });
+ 
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error.",
+    });
+  }
+};
  
 
 module.exports = {
   getAllBranchOrders,
   getOrderBranchDetails,
-  getOrderStatus
+  getOrderStatus,
+  assignDelivery
 };

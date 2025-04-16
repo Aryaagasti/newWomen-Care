@@ -444,6 +444,85 @@ const getViewOrderDetails = async (req, res) => {
   }
 };
 
+const formatDateTime = (date) => {
+  const optionsDate = {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  };
+ 
+  const optionsTime = {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  };
+ 
+  return {
+    date: new Date(date).toLocaleDateString("en-GB", optionsDate), 
+    time: new Date(date).toLocaleTimeString("en-GB", optionsTime), 
+  };
+};
+ 
+//trackOrder function
+const trackOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+ 
+    const order = await Order.findById(id)
+      .populate("items.product")
+      .populate("user");
+ 
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+ 
+    // Timeline generation
+    const timeline = [];
+ 
+    // 1. Order Placed
+    const placed = formatDateTime(order.createdAt);
+    timeline.push({
+      status: "Order Placed",
+      date: placed.date,
+      time: placed.time,
+    });
+ 
+    // 2. Out For Delivery (includes the assignment to delivery boy)
+    if (order.outForDeliveryAt) {
+      const outForDelivery = formatDateTime(order.outForDeliveryAt || order.updatedAt);
+      timeline.push({
+        status: "Out For Delivery",
+        date: outForDelivery.date,
+        time: outForDelivery.time,
+      });
+    }
+ 
+    // 3. Delivered
+    if (order.deliveryStatus === "Delivered") {
+      const delivered = formatDateTime(order.deliveredAt || order.updatedAt);
+      timeline.push({
+        status: "Delivered",
+        date: delivered.date,
+        time: delivered.time,
+      });
+    }
+ 
+    return res.status(200).json({
+      orderId: order.orderId,
+      productImage: order.items[0]?.product?.image?.[0] || "",
+      productName: order.items[0]?.product?.productName || order.items[0]?.product?.name || "Product Name",
+      quantity: order.items[0]?.quantity || 1,
+      totalPrice: order.totalAmount,
+      deliveryStatus: order.deliveryStatus,
+      timeline,
+    });
+ 
+  } catch (err) {
+    console.error("Error in trackOrder:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getOrderById,
   confirmOrder,
@@ -456,4 +535,5 @@ module.exports = {
   cancelOrder,
   getUserOrders,
   getViewOrderDetails,
+  trackOrder
 };
