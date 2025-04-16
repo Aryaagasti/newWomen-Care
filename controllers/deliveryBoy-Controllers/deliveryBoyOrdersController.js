@@ -48,12 +48,12 @@ const acceptOrder = async (req, res) => {
    
    
    //✅ Cancel delivery boy order
-  const canceldeliveryBoyOrder = async (req, res) => {
+   const canceldeliveryBoyOrder = async (req, res) => {
     try {
-      const deliveryBoyId = req.deliveryBoy.id.toString(); // Corrected: use _id instead of id
+      const deliveryBoyId = req.deliveryBoy.id.toString(); 
       const { orderId } = req.params;
       const { cancelReason, otherReason } = req.body;
-   
+  
       const validReasons = [
         "I want to change the Product",
         "Not available on the delivery time",
@@ -61,50 +61,45 @@ const acceptOrder = async (req, res) => {
         "I ordered wrong Product",
         "Other",
       ];
-   
+  
       if (!validReasons.includes(cancelReason)) {
         return res.status(400).json({ message: "Invalid cancellation reason." });
       }
-   
+  
       if (cancelReason === "Other" && (!otherReason || otherReason.trim() === "")) {
         return res.status(400).json({
           message: "Please provide a reason for cancellation.",
         });
       }
-   
-      const order = await Order.findById(orderId);
+  
+      const order = await Order.findOne({ orderId: orderId.trim() });
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-   
-      if (order.deliveryBoy?.toString() !== deliveryBoyId) {
-        return res.status(403).json({
-          message: "You are not assigned to this order",
-        });
-      }
-   
+  
       if (order.status === "Cancelled") {
         return res.status(400).json({ message: "Order is already cancelled." });
       }
-   
-      // Unassign delivery boy and mark order as cancelled
-      order.deliveryBoy = null;
-      order.deliveryStatus = "Pending"; // Make available for others
-      order.status = "Cancelled";
-      order.cancelReason = cancelReason;
+  
+      // Update cancellation details
+      order.deliveryBoy = null;                          // Set delivery boy to null
+      order.deliveryStatus = "In Process";               // Mark as open again
+      order.status = "Cancelled";                        // Mark as cancelled
+      order.cancelReason = cancelReason;                 // Reason provided
       order.otherReason = cancelReason === "Other" ? otherReason : "N/A";
-   
-      await order.save({ timestamps: false });
-   
+  
+      await order.save({ timestamps: false });           // Save without updating timestamps
+  
       return res.status(200).json({
         message: "Order cancelled successfully by delivery boy",
         order,
       });
+  
     } catch (error) {
       console.error("Cancel delivery order error:", error);
-      return res.status(500).json({ message: "Server error", error: error.message });
-    }
-  };
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
    
    
    
