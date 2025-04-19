@@ -4,6 +4,7 @@ const dayjs = require("dayjs");
 const relativeTime = require("dayjs/plugin/relativeTime");
  
 dayjs.extend(relativeTime);
+
  
 //✅ Add Review
 const addReview = async (req, res) => {
@@ -55,14 +56,52 @@ const addReview = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
- 
+
 //✅ Get All Reviews
 const getAllReviews = async (req, res) => {
     try {
         const reviews = await reviewModel
             .find()
             .select("name ratings review files createdAt productId -_id");
+
+        const formattedReviews = reviews.map((review) => {
+            const { createdAt, ...rest } = review._doc;
+            return {
+                ...rest,
+                timeAgo: dayjs(createdAt).fromNow(),
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            reviews: formattedReviews,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
  
+//✅ Get All Reviews by Product ID
+const getAllReviewsById = async (req, res) => {
+    try {
+        const { productId } = req.params;
+ 
+        // Check if the product exists
+        const product = await ProductModel.exists({ _id: productId });
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Invalid Product ID, product not found",
+            });
+        }
+ 
+        const reviews = await reviewModel
+            .find({ productId })
+            .select("name ratings review files createdAt -_id");
+ 
+        // Format createdAt to "1h ago", "2d ago", etc.
         const formattedReviews = reviews.map((review) => {
             const { createdAt, ...rest } = review._doc;
             return {
@@ -149,4 +188,4 @@ const getAverageRatings = async (req, res) => {
     }
 };
  
-module.exports = { addReview, getAllReviews, getAverageRatings };
+module.exports = { addReview, getAllReviews, getAllReviewsById, getAverageRatings };

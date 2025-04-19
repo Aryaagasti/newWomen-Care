@@ -233,31 +233,31 @@ const resetPassword = async (req, res) => {
 };
 
 // ✅ Change Password At Profile (Without Current Password)
-const changeAdminPassAtProfile = async (req, res) => {
+const changeAdminPasswordAtProfile = async (req, res) => {
   try {
     const { id } = req.params; // Admin ID from the route parameter
-    const { newPassword, confirmPassword } = req.body;
-
+    const { newPassword, confirmNewPassword } = req.body;
+ 
     // Validate required fields
-    if (!newPassword || !confirmPassword) {
+    if (!newPassword || !confirmNewPassword) {
       return res.status(400).json({ message: "Both new password and confirm password are required." });
     }
-
-    // Validate if new passwords match
-    if (newPassword !== confirmPassword) {
+ 
+    // Ensure new password and confirm password match
+    if (newPassword !== confirmNewPassword) {
       return res.status(400).json({ message: "Passwords do not match." });
     }
-
-    // Find the admin in the database by ID
-    const admin = await BranchAdmin.findById(id);
+ 
+    // Find the admin by ID
+    const admin = await SuperAdmin.findById(id);
     if (!admin) {
       return res.status(404).json({ message: "Admin not found." });
     }
-
-    // Update password directly (hashed through pre-save middleware)
+ 
+    // Update password (hashed automatically via pre-save middleware)
     admin.password = newPassword;
     await admin.save();
-
+ 
     res.status(200).json({
       success: true,
       message: "Password changed successfully.",
@@ -287,7 +287,7 @@ module.exports = {
   forgotPassword,
   verifyOtp,
   updateBranchAdminProfile,
-  changeAdminPassAtProfile,
+  changeAdminPasswordAtProfile,
   resetPassword,
   logout,
 };

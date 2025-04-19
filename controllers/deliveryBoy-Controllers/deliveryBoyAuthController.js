@@ -44,7 +44,7 @@ const LoginDeliveryBoy = async (req, res) => {
     }
   };
   
-  module.exports = { LoginDeliveryBoy };
+
  
 //✅ Get Delivery Boy Profile
 const getDeliveryBoyProfile = async (req, res) => {
@@ -64,23 +64,23 @@ const getDeliveryBoyProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const profileImage = req.files?.image?.[0]?.path;
-
+ 
     const updatedFields = { ...req.body };
-
+ 
     if (profileImage) {
       updatedFields.image = profileImage;
     }
-
+ 
     const updatedProfile = await DeliveryBoy.findByIdAndUpdate(
       req.deliveryBoy.id,
       updatedFields,
       { new: true }
     );
-
+ 
     if (!updatedProfile) {
       return res.status(404).json({ message: "Delivery boy not found." });
     }
-
+ 
     res.status(200).json({
       success: true,
       message: "Profile updated successfully.",
@@ -93,7 +93,6 @@ const updateProfile = async (req, res) => {
     });
   }
 };
-
  
 module.exports = { LoginDeliveryBoy, getDeliveryBoyProfile, updateProfile };
  

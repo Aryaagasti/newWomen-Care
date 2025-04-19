@@ -1,13 +1,11 @@
 const statusEnum = [
   "Order Placed",
   "Delivered",
+  "OrderCancelled",
   "Cancelled",
   "Confirmed",
   "In Process",
   "Order Confirmed",
-  "Packed the Product",
-  "Arrived in the Warehouse",
-  "Nearby Courier Facility",
   "Out for Delivery",
 ];
  
@@ -19,7 +17,6 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique:true
     },
     deliveryStatus: {
       type: String,
@@ -67,7 +64,6 @@ const orderSchema = new mongoose.Schema(
       deliveryCharges: { type: Number },
       orderTotal: { type: Number },
     },
-    outForDeliveryAt: { type: Date, default: null },
     status: {
       type: String,
       enum: statusEnum,
@@ -129,6 +125,10 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branches",
     },
+    outForDeliveryAt: { 
+      type: Date, 
+      default: null 
+    }, 
   },
   { timestamps: true }
 );

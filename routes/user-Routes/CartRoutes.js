@@ -6,12 +6,13 @@ const { addToCart, removeFromCart, BuyOrderFromCart, incrementCartItem, decremen
 
 //✅ User Cart Routes
 router.post("/addtocart/:productId",userValidateToken,addToCart);
+router.get("/getCarts", userValidateToken, getCart);
 router.delete("/remove/:productId", userValidateToken, removeFromCart);
-router.post('/buyNow', userValidateToken, BuyOrderFromCart);
 router.put("/increment/:productId", userValidateToken,incrementCartItem);
 router.put("/decrement/:productId",userValidateToken, decrementCartItem);
+router.post('/buyNow', userValidateToken, BuyOrderFromCart);
 router.post("/saveForLater/:productId", userValidateToken, saveForLater);
 router.post("/moveToCart/:productId", userValidateToken, moveToCart);
-router.get("/cart", userValidateToken, getCart);
+
 
 module.exports = router;

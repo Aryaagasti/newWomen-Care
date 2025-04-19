@@ -1,8 +1,8 @@
 const Order = require("../../models/UserModels/orderNow");
-const DeliveryBoyModel = require("../../models/SuperAdminModels/DeliveryBoy");
+
 const mongoose = require("mongoose");
 
-//✅ Get Order by ID
+//✅ Get Order Details by ID
 const getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -16,9 +16,17 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ message: "Order not found." });
     }
 
+    // Convert Mongoose document to plain object & remove unwanted fields
+    const {
+      otherReason,
+      cancelledBy,
+      cancelDate,
+      ...filteredOrder
+    } = order.toObject();
+
     return res.status(200).json({
       message: "Order details retrieved successfully",
-      order,
+      order: filteredOrder,
     });
   } catch (error) {
     console.error("Server Error:", error);
@@ -44,245 +52,27 @@ const confirmOrder = async (req, res) => {
 
     await order.save();
 
+    const {
+      otherReason,
+      cancelledBy,
+      cancelDate,
+      ...filteredOrder
+    } = order.toObject();
+
+    const formattedOrderDate = new Date(order.orderDate).toLocaleDateString('en-GB');
     return res.status(200).json({
       message: "Order confirmed successfully",
-      order,
+      order:{
+        ...filteredOrder,
+        orderDate: formattedOrderDate,
+      },
     });
   } catch (error) {
     console.error("Server Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-//✅ Delivered Order
-const deliveredOrder = async (req, res) => {
-  try {
-    const orderId = req.params.orderId;
-
-    // Step 1: Find the order with populated fields
-    const order = await Order.findById(orderId)
-      .populate("deliveryBoy", "fullName email address phoneNumber image")
-      .populate("items.product", "productName price");
-
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
-    }
-
-    if (order.status === "Delivered") {
-      return res.status(400).json({ message: "Order is already delivered." });
-    }
-
-    order.status = "Delivered";
-    //Removed tracking from base order object
-    const responseOrder = order.toObject();
-    delete responseOrder.deliveryBoy;
-
-    await order.save();
-    // Step 4: Get previous delivered orders of this delivery boy
-    let formattedPreviousOrders = [];
-    if (order.deliveryBoy && order.deliveryBoy._id) {
-      const previousOrders = await Order.find({
-        deliveryBoy: order.deliveryBoy._id,
-        status: "Delivered",
-        _id: { $ne: order._id },
-      })
-        .populate("items.product", "productName price")
-        .select("orderDate items totalAmount deliveryAddress");
-
-      formattedPreviousOrders = previousOrders.map((ord) => ({
-        orderDate: ord.orderDate,
-        deliveryAddress: ord.deliveryAddress,
-        totalAmount: ord.totalAmount,
-        items: ord.items.map((item) => ({
-          productName: item.product?.productName || "N/A",
-          quantity: item.quantity,
-          price: item.price,
-        })),
-      }));
-    }
-
-    // Step 5: Final merged response
-    return res.status(200).json({
-      message: "Order delivered successfully",
-      order: responseOrder,
-      // deliveryBoy: order.deliveryBoy ? {
-      //   fullName: order.deliveryBoy.fullName,
-      //   email: order.deliveryBoy.email,
-      //   address: order.deliveryBoy.address,
-      //   phoneNumber: order.deliveryBoy.phoneNumber,
-      //   image: order.deliveryBoy.image
-      // } : null,
-      // previousOrders: formattedPreviousOrders
-    });
-  } catch (error) {
-    console.error("Server Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-//✅ Ongoing Placed
-const orderPlaced = async (req, res) => {
-  try {
-    const orderId = req.params.orderId;
-
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
-    }
-
-    if (order.status === "Order Placed") {
-      return res.status(400).json({ message: "Order is already Placed." });
-    }
-
-    order.status = "Order Placed";
-    await order.save();
-
-    return res.status(200).json({
-      message: "Your Order Placed Successfully",
-      order,
-    });
-  } catch (error) {
-    console.error("Server Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
- 
-
-//✅ Packed The product
-const packedOrder = async (req, res) => {
-  try {
-    const orderId = req.params.orderId;
-    const order = await Order.findById(orderId);
-
-    if (!order) return res.status(404).json({ message: "Order not found." });
-
-    if (order.status === "Packed the Product")
-      return res.status(400).json({ message: "Order is already packed." });
-
-
-
-    // ✅ Update order status
-    order.status = "Packed the Product";
-
-    await order.save();
-
-    return res.status(200).json({
-      message: "Order packed successfully",
-      order,
-    });
-  } catch (error) {
-    console.error("Server Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
-  }
-};
-
-//✅ Arrived in the Warehouse
-const arrivedInWarehouse = async (req, res) => {
-  try {
-    const orderId = req.params.orderId;
-
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
-    }
-
-    if (order.status === "Arrived in the Warehouse") {
-      return res
-        .status(400)
-        .json({ message: "Order is already arrived in the warehouse." });
-    }
-
-    const arrivedDate = order.statusTimeline.arrivedAtWarehouse;
-
-    if (!arrivedDate) {
-      return res
-        .status(400)
-        .json({ message: "Order is not yet arrived in the warehouse." });
-    }
-
-    order.status = "Arrived in the Warehouse";
-
-    await order.save();
-
-    return res.status(200).json({
-      message: "Order arrived in the warehouse successfully",
-      order,
-    });
-  } catch (error) {
-    console.error("Server Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-//✅ Nearby Courier Facility
-const nearByCourierFacility = async (req, res) => {
-  try {
-    const orderId = req.params.orderId;
-
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
-    }
-
-    if (order.status === "Nearby Courier Facility") {
-      return res
-        .status(400)
-        .json({ message: "Order is already at Nearby courier facility." });
-    }
-
-    order.status = "Nearby Courier Facility";
-
-    await order.save();
-
-    return res.status(200).json({
-      message: "Order ready by courier facility successfully",
-      order,
-    });
-  } catch (error) {
-    console.error("Server Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-//✅ Out for Delivery
-const outForDelivery = async (req, res) => {
-  try {
-    const orderId = req.params.orderId;
-
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
-    }
-
-    if (order.status === "Out for Delivery") {
-      return res
-        .status(400)
-        .json({ message: "Order is already out for delivery." });
-    }
-
-    const outForDeliveryDate = order.statusTimeline.outForDelivery;
-
-    if (!outForDeliveryDate) {
-      return res
-        .status(400)
-        .json({ message: "Order is not yet out for delivery." });
-    }
-
-    order.status = "Out for Delivery";
-
-    await order.save();
-
-    return res.status(200).json({
-      message: "Order out for delivery successfully",
-      order,
-    });
-  } catch (error) {
-    console.error("Server Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+  
 
 //✅ Cancel Order
 const cancelOrder = async (req, res) => {
@@ -316,13 +106,14 @@ const cancelOrder = async (req, res) => {
       return res.status(404).json({ message: "Order not found." });
     }
 
-    if (order.status === "Cancelled") {
+    if (order.status === "OrderCancelled") {
       return res.status(400).json({ message: "Order is already cancelled." });
     }
 
-    order.status = "Cancelled";
+    order.status = "OrderCancelled";
+    order.deliveryStatus = "Cancelled"; // <- Add this line
     order.cancelReason = cancelReason;
-    order.otherReason = cancelReason === "Other" ? otherReason : N / A;
+    order.otherReason = cancelReason === "Other" ? otherReason : "N/A";
 
     await order.save({ timestamps: false });
 
@@ -335,6 +126,7 @@ const cancelOrder = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 //✅ Get User Orders
 const getUserOrders = async (req, res) => {
@@ -350,7 +142,10 @@ const getUserOrders = async (req, res) => {
     // Remove tracking from all orders
     const sanitizedOrders = orders.map((order) => {
       const orderObj = order.toObject();
-      delete orderObj.tracking;
+      // Remove null fields
+      if (orderObj.otherReason === null) delete orderObj.otherReason;
+      if (orderObj.cancelledBy === null) delete orderObj.cancelledBy;
+      if (orderObj.cancelDate === null) delete orderObj.cancelDate;
       return orderObj;
     });
 
@@ -362,7 +157,7 @@ const getUserOrders = async (req, res) => {
       (order) => order.status === "Delivered"
     );
     const ongoingOrders = sanitizedOrders.filter(
-      (order) => order.status === "Ongoing"
+      (order) => order.status === "In "
     );
     const cancelledOrders = sanitizedOrders.filter(
       (order) => order.status === "Cancelled"
@@ -383,7 +178,7 @@ const getUserOrders = async (req, res) => {
   }
 };
 
-//✅ Get Order Details
+//✅ Get View Order Details
 const getViewOrderDetails = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -420,7 +215,7 @@ const getViewOrderDetails = async (req, res) => {
           quantity: item.quantity,
           price: item.price,
         })),
-        orderPlacedOn: order.orderDate,
+        orderPlacedOn: new Date(order.orderDate).toLocaleDateString('en-GB'),
         orderDeliveredOn: order.deliveryDate || "Pending",
         orderNumber: order._id,
         shippingAddress: order.user?.address || "N/A",
@@ -433,7 +228,6 @@ const getViewOrderDetails = async (req, res) => {
           tax: 0,
           totalAmount: order.totalAmount,
         },
-        status: order.status,
       },
     });
   } catch (error) {
@@ -444,6 +238,9 @@ const getViewOrderDetails = async (req, res) => {
   }
 };
 
+
+//✅ trackOrder function
+// Utility function to format date and time
 const formatDateTime = (date) => {
   const optionsDate = {
     day: "2-digit",
@@ -462,8 +259,7 @@ const formatDateTime = (date) => {
     time: new Date(date).toLocaleTimeString("en-GB", optionsTime), 
   };
 };
- 
-//trackOrder function
+
 const trackOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -522,18 +318,11 @@ const trackOrder = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 module.exports = {
   getOrderById,
   confirmOrder,
-  deliveredOrder,
-  orderPlaced,
-  packedOrder,
-  arrivedInWarehouse,
-  nearByCourierFacility,
-  outForDelivery,
   cancelOrder,
   getUserOrders,
   getViewOrderDetails,
-  trackOrder
+  trackOrder,
 };

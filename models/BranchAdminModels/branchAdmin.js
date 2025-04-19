@@ -16,9 +16,9 @@ const branchAdminSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
-      trim: true,
-    },
+      required: [true, "Password is required"],
+      minlength: [8, "Password must be at least 8 characters long"],
+  },
     contactNumber: {
       type: String,
       required: true,

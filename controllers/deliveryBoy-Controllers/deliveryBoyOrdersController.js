@@ -1,6 +1,7 @@
 const Order = require("../../models/UserModels/orderNow");
- 
 const mongoose = require("mongoose")
+
+//✅ Accept delivery Boy Order
 const acceptOrder = async (req, res) => {
   try {
     const deliveryBoyId = req.deliveryBoy?.id;
@@ -39,6 +40,7 @@ const acceptOrder = async (req, res) => {
   }
 };
  
+//✅ Cancel delivery Boy Order
   const canceldeliveryBoyOrder = async (req, res) => {
     try {
       const deliveryBoyId = req.deliveryBoy.id.toString(); 
@@ -92,7 +94,7 @@ const acceptOrder = async (req, res) => {
     }
   };
   
-  
+  //✅ Get available orders for delivery boy
   const getAvailableOrders = async (req, res) => {
     try {
       const deliveryBoyId = req.deliveryBoy?.id;
@@ -161,6 +163,72 @@ const acceptOrder = async (req, res) => {
     }
   };
   
+  const getavaliableOrderDetails = async (req, res) => {
+    try {
+      const deliveryBoyId = req.deliveryBoy?.id;
+      const { id: orderId } = req.params; // order ID from route parameter
+  
+      if (!deliveryBoyId) {
+        return res.status(401).json({ success: false, message: "Unauthorized access" });
+      }
+  
+      const order = await Order.findOne({
+        _id: orderId,
+        deliveryBoy: deliveryBoyId
+      })
+        .populate("user", "fullName")
+        .populate("branchInfo", "branchName fullAddress")
+        .populate({
+          path: "items.product",
+          select: "productName image user",
+          populate: {
+            path: "user",
+            select: "fullName"
+          }
+        });
+  
+      if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+      }
+  
+      const firstItem = order.items?.[0];
+      const product = firstItem?.product;
+  
+      const buyerName = order.user?.fullName || "N/A";
+      const sellerName =
+        product?.user?.fullName || order.branchInfo?.branchName || "Seller";
+      const productName = product?.productName || "N/A";
+      const productImage = product?.image || "";
+      const price = order.totalAmount || 0;
+  
+      const address = order.deliveryAddress;
+      const fullAddress = `${address?.street || ""}, ${address?.city || ""}, ${address?.zipCode || ""}`;
+      const encodedAddress = encodeURIComponent(fullAddress);
+      const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress};`
+  
+      const orderDetails = {
+        orderId: order.orderId,
+        productName,
+        productImage,
+        price,
+        date:new Date(order.createdAt).toLocaleDateString('en-GB'),
+        buyerName,
+        sellerName,
+        yourEarning:` ₹${(price * 0.10).toFixed(0)}`,
+        seeLocationUrl: googleMapsUrl,
+        status: order.deliveryStatus || order.status || "In Process"
+      };
+  
+      res.status(200).json({ success: true, order: orderDetails });
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching order details",
+        error: error.message
+      });
+    }
+  };
  
    //✅ Confirm payment
 const confirmPayment = async (req, res) => {
@@ -470,9 +538,12 @@ const confirmPayment = async (req, res) => {
     acceptOrder,
     canceldeliveryBoyOrder,
     getAvailableOrders,
+    getavaliableOrderDetails,
     confirmPayment,
     getDeliveryBoySummary,
     getOrderDetails,
     getDateWiseOrderHistory,
     getOrderHistoryDetails
   };  
+ 
+ 
